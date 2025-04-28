@@ -1,0 +1,90 @@
+### Command to build docker image with custom libraries
+
+docker build -t flink/custom:v1.0 .
+
+### Run the sql-client
+
+docker compose run sql-client
+
+docker compose scale taskmanager=2
+
+
+
+### Refrences 
+
+https://nightlies.apache.org/flink/flink-docs-release-2.0/docs/deployment/resource-providers/standalone/docker/#using-flink-python-on-docker
+
+[Submitting PyFlink Jobs](https://nightlies.apache.org/flink/flink-docs-release-2.0/docs/deployment/cli/#submitting-pyflink-jobs)
+
+`./bin/flink run --python /opt/flink/src/python/word_count.py`
+
+Using the pyenv in MacOS
+
+https://faun.pub/how-to-install-multiple-python-on-your-mac-d20713740a2d
+
+https://realpython.com/intro-to-pyenv/
+
+https://nightlies.apache.org/flink/flink-docs-release-2.0/docs/deployment/resource-providers/standalone/docker/
+
+https://nightlies.apache.org/flink/flink-docs-release-2.0/docs/dev/table/sql/gettingstarted/
+
+CREATE TABLE employee_information (
+    EMPLOYEE_ID VARCHAR,
+    FIRST_NAME VARCHAR,
+    LAST_NAME VARCHAR,
+    EMAIL VARCHAR,
+    PHONE_NUMBER VARCHAR,
+    HIRE_DATE VARCHAR,
+    JOB_ID VARCHAR,
+    SALARY VARCHAR,
+    COMMISSION_PCT VARCHAR,
+    MANAGER_ID VARCHAR,
+    DEPARTMENT_ID VARCHAR
+) WITH ( 
+    'connector' = 'filesystem',
+    'path' = '/opt/flink/data/import/employees.csv',
+    'format' = 'csv'
+);
+
+
+
+Select DEPARTMENT_ID, count(1) FROM employee_information GROUP BY DEPARTMENT_ID;
+
+CREATE TABLE department_counts (
+    DEPARTMENT_ID VARCHAR,
+    EMP_COUNT BIGINT
+) WITH ( 
+    'connector' = 'filesystem',
+    'path' = '/opt/flink/data/export/dept_count.csv',
+    'format' = 'csv'
+);
+
+INSERT INTO department_counts Select DEPARTMENT_ID, count(1) as EMP_COUNT FROM employee_information GROUP BY DEPARTMENT_ID;
+
+
+CREATE TABLE KafkaTable (
+  `transactionId` STRING,
+  `productId` STRING,
+  `productName` STRING,
+  `productCategory` STRING,
+  `productPrice` STRING,
+  `productQuantity` STRING,
+  `productBrand` STRING,
+  `currency` STRING,
+  `customerId` STRING,
+  `transactionDate` STRING,
+  `paymentMethod` STRING,
+  `totalAmount` STRING,
+  `ts` TIMESTAMP_LTZ(3) METADATA FROM 'timestamp'
+) WITH (
+  'connector' = 'kafka',
+  'topic' = 'financial_transactions',
+  'properties.bootstrap.servers' = 'broker-2:29095',
+  'properties.group.id' = 'testGroup',
+  'scan.startup.mode' = 'earliest-offset',
+  'format' = 'json'
+);
+
+DROP TABLE KafkaTable;
+
+Select * From KafkaTable;

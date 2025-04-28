@@ -1,0 +1,68 @@
+name: flink-session
+
+include:
+  - kafka-compose.yaml
+
+services:
+  jobmanager:
+    image: flink/custom:v1.0 # flink:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+    volumes:
+      - type: bind
+        source: ./data
+        target: /opt/flink/data
+      - type: bind
+        source: ./pyflink
+        target: /opt/flink/src/python
+
+  taskmanager:
+    image: flink/custom:v1.0 # flink:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    scale: 1
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 3
+    volumes:
+      - type: bind
+        source: ./data
+        target: /opt/flink/data
+      - type: bind
+        source: ./pyflink
+        target: /opt/flink/src/python
+
+  sql-client:
+    image: flink/custom:v1.0 # flink:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    command: bin/sql-client.sh
+    depends_on:
+      - jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        rest.address: jobmanager  
+    volumes:
+      - type: bind
+        source: ./data
+        target: /opt/flink/data
+      - type: bind
+        source: ./pyflink
+        target: /opt/flink/src/python
